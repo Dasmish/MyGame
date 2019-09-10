@@ -4,7 +4,6 @@ export default class Player extends React.PureComponent {
 
     constructor(props) {
         super(props);
-
     }
 
     //Отрисовка Игрока

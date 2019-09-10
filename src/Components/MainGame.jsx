@@ -1,13 +1,12 @@
 import React from 'react';
 
 //Элементы игры
-import Player from './Player'
+import drawPlayer from './Player'
 
 export default class GameField extends React.PureComponent {
 
     constructor(props) {
         super(props);
-
     }
 
     resizeCanvas = () => {
