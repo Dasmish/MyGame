@@ -1,20 +1,20 @@
 import React from 'react';
 
-export default class Player extends React.PureComponent {
+export default function drawPlayer(params) {
+    
 
-    constructor(props) {
-        super(props);
-    }
 
+   /* componentDidMount() {
+        this.props.onRef(this);
+    }*/
+    
 
     //Отрисовка Игрока
-    drawPlayer = () => {
-        const cont = this.refs.canvas.getContext('2d');
+   
+        console.log(this)
+        const cont = this.canvas.getContext('2d');
         cont.strokeRect(180, window.innerHeight - 400, 101, 257);
-    }
+    
 
-    test_1 = function test(params) {
-        return test;
-    }
     
 }

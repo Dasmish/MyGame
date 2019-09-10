@@ -1,10 +1,17 @@
 import React from 'react';
-import Player from './Player'
 
 //Элементы игры
+import drawPlayer from './Player'
 
 export default class GameField extends React.PureComponent {
 
+    componentWillMount() {
+        this.a = '1';
+
+        // this.canvas = React.createRef()
+        this.drawPlayer = drawPlayer.bind(this);
+
+    }
     resizeCanvas = () => {
         var canId = document.querySelectorAll('#canvas')[0];
         canId.width = window.innerWidth;
@@ -15,13 +22,15 @@ export default class GameField extends React.PureComponent {
     componentDidMount() {
         //Инициализация
         this.resizeCanvas();
+        this.drawPlayer();
         //Движения игрока
     }
     
 
     render() {
         return (
-            <canvas ref="canvas" id="canvas"></canvas>
+            // <canvas ref={this.canvas} id="canvas"></canvas>
+            <canvas ref={(node) => node ? this.canvas = node : '' } id="canvas"></canvas>
         );
     }
 }
