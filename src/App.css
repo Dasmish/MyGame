@@ -8,9 +8,12 @@ html, body, #root, .App {
 }
 
 body {
-  background-color: rgb(231, 231, 231);
+  overflow: hidden;
 }
 
+canvas {
+  background-color: rgb(231, 231, 231);
+}
 
 .App {
   text-align: center;

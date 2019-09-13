@@ -1,5 +1,6 @@
 import React from 'react';
 import Styled from 'styled-components';
+import { setInterval } from 'timers';
 
 //Элементы игры
 // import drawPlayer from './Player';
@@ -50,6 +51,8 @@ const  MoveBtns = {
     ArrowRight: 39,
 }
 
+var GameP;
+
 export default class GameField extends React.PureComponent {
 
     constructor(props) {
@@ -60,89 +63,50 @@ export default class GameField extends React.PureComponent {
         };
     }
 
-    playerMovement = event => {
-        var playerBody = document.querySelectorAll('.Player')[0];
-        var left = parseInt(playerBody.style.left);
-        var bottom = parseInt(playerBody.style.bottom);
-        if(event.key === 'ArrowRight') {
-            playerBody.style.left = (left += 1) + '%';
-        }
-        else if(event.key === 'ArrowLeft') {
-            playerBody.style.left = (left -= 1) + '%';
-        }
-        else if(event.key === 'ArrowUp') {
-            playerBody.style.bottom = (bottom += 1) + '%';
-        }
+    Canvas = () => {
+        var canvas = document.querySelector('canvas');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
     }
 
-    whichMenuBtn = (param) => {
-        switch(param) {
-            case 'Start':
-                this.setState({ menuOpened: 'Game', gameRendered: true });
-                break;
-            case 'Options':
-                console.log('Options');
-                break;
-            default: 
-                console.log('Default');
-                break;
-        }
+    drawPlayer = (x, y) => {
+        this.x = x;
+        this.y = y;
+        this.speedX = 0;
+        this.speedY = 0;
+        var ctx = document.querySelector('canvas').getContext('2d');
+        ctx.fillStyle = 'red';
+        ctx.fillRect(x,y,50,50);
     }
-    
+
+    moving = () => {
+    }
+
+    redraw = ()  => {
+        var nx = 50, ny = 50;
+        setInterval( () => { 
+            this.drawPlayer(nx += 1, ny += 1, 50, 50) 
+        },20)
+    }
 
     componentDidMount() {
-
-        // this.a = '1';
-
         // this.canvas = React.createRef()
         // this.drawPlayer = drawPlayer.bind(this);
 
         //Инициализация
-
+        this.Canvas();
+        this.drawPlayer(10,10);
+        this.redraw();
         //Движения игрока
-        console.log(this.state.gameRendered)
-        window.addEventListener('keydown', this.playerMovement)
-        
+        // window.addEventListener('keydown', this.playerMovement)
     }    
     
 
     render() {
         var Menu_Page = this.state.menuOpened;
-        // event.target.textContent
         return (
             <Main className="Menu">
-                {Menu_Page === 'Start' && (
-                    <React.Fragment>
-                        <MainTitle>Main Menu</MainTitle>
-                        <ul className="menu-items">
-                            {
-                                Object.keys(MenuItems).map((item, i) => {
-                                    return (
-                                        <StyledLi key={i} onClick={ (event) => {
-                                            this.whichMenuBtn(event.target.textContent)
-                                        }}>{MenuItems[item]}</StyledLi>
-                                    )
-                                })
-                            }
-                        </ul>
-                    </React.Fragment>
-                )}
-                {Menu_Page === 'Options' && (
-                    <React.Fragment>
-                        <div onClick={ () => {
-                            this.setState({menuOpened: 'Start', gameRendered: false})
-                        }} className='back'>Back</div>
-                        <div>Test</div>
-                    </React.Fragment>
-                    )
-                }
-                {Menu_Page === 'Game' && this.state.gameRendered && (
-                    <React.Fragment>
-                        <div style={BackBtn} className='back' onClick={() => {this.setState({ menuOpened: 'Start', gameRendered: false })}}>Back</div>
-                        <div className='Player' style={Player} onKeyPress={ () => {this.playerMovement()}}></div>
-                    </React.Fragment>
-                )}
-                
+                <canvas ref="canvas"></canvas>
             </Main>
         );
     }
