@@ -5,6 +5,7 @@ import { setInterval } from 'timers';
 //Элементы игры
 // import drawPlayer from './Player';
 // import MainMenu from './MainMenu';
+import a from '../Spites/PinkMonster/PinkMonster.png'
 
 const Main = Styled.div`
     display: flex;
@@ -58,9 +59,8 @@ export default class GameField extends React.PureComponent {
     constructor(props) {
         super(props);
         this.state = {
-            menuOpened: 'Start',
-            gameRendered: false,
         };
+        this.interval = null;
     }
 
     Canvas = () => {
@@ -69,24 +69,47 @@ export default class GameField extends React.PureComponent {
         canvas.height = window.innerHeight;
     }
 
-    drawPlayer = (x, y) => {
+    drawPlayer = (x,y) => {
         this.x = x;
         this.y = y;
         this.speedX = 0;
         this.speedY = 0;
         var ctx = document.querySelector('canvas').getContext('2d');
-        ctx.fillStyle = 'red';
-        ctx.fillRect(x,y,50,50);
+        var player_img = new Image();
+        player_img.onload = function () {
+            ctx.drawImage(player_img,this.x,this.y,50,50)
+        }
+        player_img.src = a;
+        console.log('width',player_img.width, 'height', player_img.height)
     }
 
-    moving = () => {
+    moving = (e) => {
+        console.log(e)
+        switch(e.key) {
+            case 'ArrowLeft':
+                this.drawPlayer(this.x -= 2, this.y);
+                break;
+            case 'ArrowUp':
+                this.drawPlayer(this.x, this.y -= 1);
+                break;
+            case 'ArrowRight':
+                this.drawPlayer(this.x += 2, this.y);
+                break; 
+            case 'ArrowDown':
+                this.drawPlayer(this.x, this.y += 1);
+                break;
+            default:
+                this.drawPlayer(this.x, this.y) 
+        }
     }
 
-    redraw = ()  => {
-        var nx = 50, ny = 50;
-        setInterval( () => { 
-            this.drawPlayer(nx += 1, ny += 1, 50, 50) 
-        },20)
+    redraw = (e) => {
+        console.log("!")
+        var cnv = document.querySelector('canvas');
+        var ctx = document.querySelector('canvas').getContext('2d');
+        console.log(cnv,ctx);
+        ctx.clearRect(100,100,cnv.width,cnv.height);
+        this.moving(e);
     }
 
     componentDidMount() {
@@ -95,8 +118,21 @@ export default class GameField extends React.PureComponent {
 
         //Инициализация
         this.Canvas();
-        this.drawPlayer(10,10);
-        this.redraw();
+        this.drawPlayer(0,0);
+        // setInterval(() => {
+        //     this.redraw();
+        // }, 20)
+        window.addEventListener('keydown', (e) => {
+            this.redraw(e)           
+        })
+          
+        window.addEventListener('keyup', (e) => {
+        //     console.log('clear', this.interval)
+        //     clearInterval(this.interval)
+        //    // this.redraw(false)
+        })
+        
+        
         //Движения игрока
         // window.addEventListener('keydown', this.playerMovement)
     }    
