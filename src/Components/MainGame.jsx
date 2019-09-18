@@ -52,48 +52,60 @@ const  MoveBtns = {
     ArrowRight: 39,
 }
 
-var GameP;
+let keysPressed = {}
+
+let posX = 200;
+let posY = 800;
+
+let BlockH = 50;
+let BlockW = 50;
+
+let Gravity = 0.6;
+let GravitySpeed = 0;
+
+let FaceRight = false;
+let FaleLeft = false;
 
 export default class GameField extends React.PureComponent {
 
     constructor(props) {
         super(props);
         this.state = {
+
         };
         this.interval = null;
+        
     }
 
     Canvas = () => {
-        var canvas = document.querySelector('canvas');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        var cnv = document.querySelector('canvas');
+        cnv.width = window.innerWidth;
+        cnv.height = window.innerHeight;
     }
 
     drawPlayer = (x,y) => {
         this.x = x;
         this.y = y;
-        this.speedX = 0;
-        this.speedY = 0;
         var ctx = document.querySelector('canvas').getContext('2d');
-        var player_img = new Image();
+        /*var player_img = new Image();
         player_img.onload = function () {
             ctx.drawImage(player_img,this.x,this.y,50,50)
         }
-        player_img.src = a;
-        console.log('width',player_img.width, 'height', player_img.height)
+        player_img.src = a;*/
+        ctx.fillStyle = 'red';
+        ctx.fillRect(this.x, this.y, BlockH,BlockW)
     }
 
     moving = (e) => {
-        console.log(e)
         switch(e.key) {
             case 'ArrowLeft':
-                this.drawPlayer(this.x -= 2, this.y);
+                this.drawPlayer(this.x -= 2.5, this.y);
                 break;
             case 'ArrowUp':
                 this.drawPlayer(this.x, this.y -= 1);
                 break;
             case 'ArrowRight':
-                this.drawPlayer(this.x += 2, this.y);
+                this.drawPlayer(this.x += 2.5, this.y);
                 break; 
             case 'ArrowDown':
                 this.drawPlayer(this.x, this.y += 1);
@@ -103,36 +115,66 @@ export default class GameField extends React.PureComponent {
         }
     }
 
-    redraw = (e) => {
-        console.log("!")
-        var cnv = document.querySelector('canvas');
-        var ctx = document.querySelector('canvas').getContext('2d');
-        console.log(cnv,ctx);
-        ctx.clearRect(100,100,cnv.width,cnv.height);
-        this.moving(e);
+    bottomCollideAndGravity = () => {
+        var cnv = document.querySelector('canvas').height - BlockH;
+        if(posY > cnv) {
+            this.drawPlayer(this.x, cnv)
+        }
     }
 
-    componentDidMount() {
-        // this.canvas = React.createRef()
-        // this.drawPlayer = drawPlayer.bind(this);
+    redraw = (e) => {
+        var cnv = document.querySelector('canvas');
+        var ctx = document.querySelector('canvas').getContext('2d');
+        ctx.clearRect(0,0,cnv.width,cnv.height);
+        this.moving(e);
+        var player_img = new Image();
+        player_img.src = a;
+        ctx.drawImage(player_img,this.x,this.y,50,50)
+    }
 
+    redrawCnv = () => {
+        var cnv = document.querySelector('canvas');
+        var ctx = document.querySelector('canvas').getContext('2d');
+        ctx.clearRect(0,0,cnv.width,cnv.height);
+    }
+
+    gameLoop = () => {
+        this.redrawCnv();
+        
+        if(keysPressed.w) {
+            this.drawPlayer(posX, posY -= 2);
+        } else if(keysPressed.s) {
+            this.drawPlayer(posX, posY += 2);
+        }
+        if(keysPressed.a) {
+            this.drawPlayer(posX -= 2, posY);
+        } else if(keysPressed.d) {
+            this.drawPlayer(posX +=2, posY);
+        }
+        
+        this.drawPlayer(posX,posY);
+        
+
+        requestAnimationFrame(this.gameLoop)
+    }
+
+
+    componentDidMount() {
+        
         //Инициализация
         this.Canvas();
-        this.drawPlayer(0,0);
-        // setInterval(() => {
-        //     this.redraw();
-        // }, 20)
+        // this.drawPlayer(0,0);
         window.addEventListener('keydown', (e) => {
-            this.redraw(e)           
-        })
-          
+            keysPressed[e.key] = true;
+        });
         window.addEventListener('keyup', (e) => {
-        //     console.log('clear', this.interval)
-        //     clearInterval(this.interval)
-        //    // this.redraw(false)
-        })
-        
-        
+            keysPressed[e.key] = false;
+        });
+        this.gameLoop();
+
+        /*window.addEventListener('keydown', (e) => {
+            this.redraw(e)           
+        })*/
         //Движения игрока
         // window.addEventListener('keydown', this.playerMovement)
     }    
