@@ -13,6 +13,28 @@ whichMenuBtn = (param) => {
     }
 }
 
+
+//Движение игрока на свитче
+moving = (e) => {
+    switch(e.key) {
+        case 'ArrowLeft':
+            this.drawPlayer(this.x -= 2.5, this.y);
+            break;
+        case 'ArrowUp':
+            this.drawPlayer(this.x, this.y -= 1);
+            break;
+        case 'ArrowRight':
+            this.drawPlayer(this.x += 2.5, this.y);
+            break; 
+        case 'ArrowDown':
+            this.drawPlayer(this.x, this.y += 1);
+            break;
+        default:
+            this.drawPlayer(this.x, this.y) 
+    }
+}
+
+
 //Движение игрока
 playerMovement = event => {
         var playerBody = document.querySelectorAll('.Player')[0];

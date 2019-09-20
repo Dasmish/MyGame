@@ -5,7 +5,7 @@ import { setInterval } from 'timers';
 //Элементы игры
 // import drawPlayer from './Player';
 // import MainMenu from './MainMenu';
-import a from '../Spites/PinkMonster/PinkMonster.png'
+import a from '../Spites/PinkMonster/Pink_Monster_Walk_6.png'
 
 const Main = Styled.div`
     display: flex;
@@ -55,23 +55,36 @@ const  MoveBtns = {
 let keysPressed = {}
 
 let posX = 200;
-let posY = 800;
+let posY = 500;
+let Speed = 2;
 
-let BlockH = 50;
-let BlockW = 50;
+const Scale = 2;
+const BlockH = 16;
+const BlockW = 18;
 
-let Gravity = 0.6;
-let GravitySpeed = 0;
+let ScaleW = Scale * BlockW;
+let ScaleH = Scale * BlockH;
+
+const Frames = 6;
+let FramesCount = 0;
+const Loop_Cycle = [0,50, 150];
+let loopIndex = 0;
+
+const Gravity = 0.6;
+const GravitySpeed = 0;
 
 let FaceRight = false;
 let FaleLeft = false;
+
+let img = new Image();
+img.src = a;
 
 export default class GameField extends React.PureComponent {
 
     constructor(props) {
         super(props);
         this.state = {
-
+            isCollide: false,
         };
         this.interval = null;
         
@@ -83,53 +96,28 @@ export default class GameField extends React.PureComponent {
         cnv.height = window.innerHeight;
     }
 
-    drawPlayer = (x,y) => {
+    drawPlayer = (x,y, frames) => {
         this.x = x;
         this.y = y;
         var ctx = document.querySelector('canvas').getContext('2d');
-        /*var player_img = new Image();
-        player_img.onload = function () {
-            ctx.drawImage(player_img,this.x,this.y,50,50)
-        }
-        player_img.src = a;*/
-        ctx.fillStyle = 'red';
-        ctx.fillRect(this.x, this.y, BlockH,BlockW)
+        ctx.drawImage(img, frames, 0, ScaleW, ScaleH, this.x, this.y, 50,50)
     }
 
-    moving = (e) => {
-        switch(e.key) {
-            case 'ArrowLeft':
-                this.drawPlayer(this.x -= 2.5, this.y);
-                break;
-            case 'ArrowUp':
-                this.drawPlayer(this.x, this.y -= 1);
-                break;
-            case 'ArrowRight':
-                this.drawPlayer(this.x += 2.5, this.y);
-                break; 
-            case 'ArrowDown':
-                this.drawPlayer(this.x, this.y += 1);
-                break;
-            default:
-                this.drawPlayer(this.x, this.y) 
-        }
-    }
-
-    bottomCollideAndGravity = () => {
-        var cnv = document.querySelector('canvas').height - BlockH;
-        if(posY > cnv) {
-            this.drawPlayer(this.x, cnv)
-        }
-    }
-
-    redraw = (e) => {
+    drawLand = () => {
         var cnv = document.querySelector('canvas');
         var ctx = document.querySelector('canvas').getContext('2d');
-        ctx.clearRect(0,0,cnv.width,cnv.height);
-        this.moving(e);
-        var player_img = new Image();
-        player_img.src = a;
-        ctx.drawImage(player_img,this.x,this.y,50,50)
+        ctx.fillStyle = 'grey';
+        ctx.fillRect(0,800, cnv.width, cnv.height)
+    }
+
+    allowMove = (deltaX, deltaY) => {
+        var cnv = document.querySelector('canvas');
+        if(posX + deltaX > 0 && posX + ScaleW + deltaX < cnv.width) {
+            posX += deltaX;
+        }
+        if(posY + deltaY > 0 && posY + ScaleH + deltaY < cnv.height) {
+            posY += deltaY;
+        }
     }
 
     redrawCnv = () => {
@@ -139,31 +127,56 @@ export default class GameField extends React.PureComponent {
     }
 
     gameLoop = () => {
+        let hasMoved = false;
+
         this.redrawCnv();
-        
+        this.drawLand();
+
         if(keysPressed.w) {
-            this.drawPlayer(posX, posY -= 2);
+            this.allowMove(0, -Speed);
+            hasMoved = true;
         } else if(keysPressed.s) {
-            this.drawPlayer(posX, posY += 2);
+            this.allowMove(0, Speed);
+            hasMoved = true;
         }
         if(keysPressed.a) {
-            this.drawPlayer(posX -= 2, posY);
+            this.allowMove(-Speed, 0);
+            hasMoved = true;
         } else if(keysPressed.d) {
-            this.drawPlayer(posX +=2, posY);
+            this.allowMove(Speed, 0);
+            hasMoved = true;
+        }
+
+        if(hasMoved) {
+            FramesCount++;
+            if(FramesCount >= Frames) {
+                loopIndex++;
+                if(loopIndex >= Loop_Cycle.length) {
+                    loopIndex = 0;
+                }
+            }
+        }
+        if (!hasMoved) {
+            loopIndex = 0;
         }
         
-        this.drawPlayer(posX,posY);
-        
+        this.drawPlayer(posX,posY, Loop_Cycle[loopIndex]);
 
-        requestAnimationFrame(this.gameLoop)
+        window.requestAnimationFrame(this.gameLoop)
     }
 
 
     componentDidMount() {
+
+        let img = new Image();
+            img.src = 'https://opengameart.org/sites/default/files/Green-Cap-Character-16x18.png';
+        img.onload = function() {
+            // window.requestAnimationFrame(this.gameLoop());
+        };
         
         //Инициализация
         this.Canvas();
-        // this.drawPlayer(0,0);
+        this.drawLand();
         window.addEventListener('keydown', (e) => {
             keysPressed[e.key] = true;
         });
