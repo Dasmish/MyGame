@@ -1,11 +1,11 @@
 import React from 'react';
 import Styled from 'styled-components';
-import { setInterval } from 'timers';
 
 //Элементы игры
 // import drawPlayer from './Player';
 // import MainMenu from './MainMenu';
-import a from '../Spites/PinkMonster/Pink_Monster_Walk_6.png'
+import move from '../Spites/PinkMonster/Pink_Monster_Walk_6.png'
+import jump from '../Spites/PinkMonster/Pink_Monster_Jump_8.png'
 
 const Main = Styled.div`
     display: flex;
@@ -14,81 +14,44 @@ const Main = Styled.div`
     flex-direction: column;
     height: 100%;
 `
-const MainTitle = Styled.h1`
-    font-size: 72px;
-    padding-bottom: 100px;
-`
 
-const StyledLi = Styled.li`
-    font-size: 40px;
-    cursor: pointer;
+let keysPressed = {} // Объект для клавиш движения
 
-    :hover {
-        color: red;
-    }
-`
-const BackBtn = {
-    position: 'absolute',
-    top: '5%',
-    left: '5%',
-}
-
-
-const Player = {
-    position: 'absolute',
-    left: '20%',
-    bottom: '20%',
-    border: '2px solid red',
-    width: '20px',
-    height: '20px',
-}
-
-const MenuItems = {
-    start: 'Start',
-    options: 'Options',
-}
-const  MoveBtns = {
-    ArrowLeft: 37,
-    ArrowRight: 39,
-}
-
-let keysPressed = {}
-
-let posX = 200;
+let posX = 200; // Стартовая позиция
 let posY = 500;
 let Speed = 2;
 
 const Scale = 2;
-const BlockH = 16;
-const BlockW = 18;
+const BlockH = 16; // Левый верхний угол картинки
+const BlockW = 18; // Правый верхний угол картинки
 
-let ScaleW = Scale * BlockW;
-let ScaleH = Scale * BlockH;
+let ScaleW = Scale * BlockW; // Левый нижний угол картинки 
+let ScaleH = Scale * BlockH; // Правый нижний угол картинки
 
-const Frames = 6;
-let FramesCount = 0;
-const Loop_Cycle = [0,50, 150];
-let loopIndex = 0;
+const Frames = 12;
+let FramesMoveCount = 0; //Движение
+let FramesJumpCount = 0;
 
-const Gravity = 0.6;
-const GravitySpeed = 0;
+const Loop_Move = [0,30,60,90,125,160]; // Цикл картинок спрайта на движение
+let loopMoveIndex = 0; // Индекс картинки движения
 
-let FaceRight = false;
-let FaleLeft = false;
+const Loop_Jump = [0, 30, 60, 90, 120, 150]; // Цикл картинок спрайта для прыжка
+let loopJumpIndex = 0; // Индекс картинки прыжка
 
-let img = new Image();
-img.src = a;
+const GravitySpeed = 0.06;
+let Gravity = 0;
+
+const FaceLeft = -1; // Поворот влево
+const FaceRight = 0; // Поворот вправо
+let currentFacing = FaceRight; // По умолчанию картинка смотрит вправо
+
+let img_move = new Image();
+let img_jump = new Image();
+
+img_move.src = move;
+img_jump.src = jump;
 
 export default class GameField extends React.PureComponent {
-
-    constructor(props) {
-        super(props);
-        this.state = {
-            isCollide: false,
-        };
-        this.interval = null;
-        
-    }
 
     Canvas = () => {
         var cnv = document.querySelector('canvas');
@@ -96,11 +59,11 @@ export default class GameField extends React.PureComponent {
         cnv.height = window.innerHeight;
     }
 
-    drawPlayer = (x,y, frames) => {
+    drawPlayer = (x,y, framesRight) => {
         this.x = x;
         this.y = y;
         var ctx = document.querySelector('canvas').getContext('2d');
-        ctx.drawImage(img, frames, 0, ScaleW, ScaleH, this.x, this.y, 50,50)
+        ctx.drawImage(img_move, framesRight, 0, ScaleW, ScaleH, this.x, this.y, 50,50)
     }
 
     drawLand = () => {
@@ -110,13 +73,22 @@ export default class GameField extends React.PureComponent {
         ctx.fillRect(0,800, cnv.width, cnv.height)
     }
 
-    allowMove = (deltaX, deltaY) => {
+    allowMove = (deltaX, deltaY, facing) => {
         var cnv = document.querySelector('canvas');
         if(posX + deltaX > 0 && posX + ScaleW + deltaX < cnv.width) {
             posX += deltaX;
         }
         if(posY + deltaY > 0 && posY + ScaleH + deltaY < cnv.height) {
             posY += deltaY;
+        }
+        currentFacing = facing;
+    }
+    hitBottom = () => {
+        Gravity += GravitySpeed;
+        posY = posY += Gravity;
+        var rockBottom = document.querySelector('canvas').height - 150;
+        if(posY > rockBottom) {
+            posY = rockBottom;
         }
     }
 
@@ -128,39 +100,60 @@ export default class GameField extends React.PureComponent {
 
     gameLoop = () => {
         let hasMoved = false;
+        let hasJumped = false;
 
         this.redrawCnv();
         this.drawLand();
+        this.hitBottom();
 
         if(keysPressed.w) {
             this.allowMove(0, -Speed);
-            hasMoved = true;
-        } else if(keysPressed.s) {
+            hasJumped = true;
+        } 
+        /*else if(keysPressed.s) {
             this.allowMove(0, Speed);
-            hasMoved = true;
-        }
+        }*/
         if(keysPressed.a) {
-            this.allowMove(-Speed, 0);
+            this.allowMove(-Speed, 0, FaceLeft);
             hasMoved = true;
         } else if(keysPressed.d) {
-            this.allowMove(Speed, 0);
+            this.allowMove(Speed, 0, FaceRight);
             hasMoved = true;
         }
 
+        // Move Sprite
         if(hasMoved) {
-            FramesCount++;
-            if(FramesCount >= Frames) {
-                loopIndex++;
-                if(loopIndex >= Loop_Cycle.length) {
-                    loopIndex = 0;
+            FramesMoveCount++;
+            if(FramesMoveCount >= Frames) {
+                FramesMoveCount = 0;
+                loopMoveIndex++;
+                if(loopMoveIndex >= Loop_Move.length) {
+                    loopMoveIndex = 0;
                 }
             }
         }
+        // Cancel Sprite animation
         if (!hasMoved) {
-            loopIndex = 0;
+            loopMoveIndex = 0;
         }
-        
-        this.drawPlayer(posX,posY, Loop_Cycle[loopIndex]);
+
+        // Jump Sprite
+        if(hasJumped) {
+            FramesJumpCount++;
+            if(FramesJumpCount >= Frames) {
+                FramesJumpCount = 0;
+                loopJumpIndex++;
+                if(loopJumpIndex >= Loop_Move.length) {
+                    loopJumpIndex = 0;
+                }
+            }
+        }
+        // Cancel Sprite animation
+        if (!hasJumped) {
+            loopJumpIndex = 0;
+        }
+
+        this.drawPlayer(posX,posY, Loop_Move[loopMoveIndex]);
 
         window.requestAnimationFrame(this.gameLoop)
     }
@@ -168,12 +161,6 @@ export default class GameField extends React.PureComponent {
 
     componentDidMount() {
 
-        let img = new Image();
-            img.src = 'https://opengameart.org/sites/default/files/Green-Cap-Character-16x18.png';
-        img.onload = function() {
-            // window.requestAnimationFrame(this.gameLoop());
-        };
-        
         //Инициализация
         this.Canvas();
         this.drawLand();
@@ -194,7 +181,6 @@ export default class GameField extends React.PureComponent {
     
 
     render() {
-        var Menu_Page = this.state.menuOpened;
         return (
             <Main className="Menu">
                 <canvas ref="canvas"></canvas>
