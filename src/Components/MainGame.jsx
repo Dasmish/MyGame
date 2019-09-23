@@ -73,7 +73,7 @@ export default class GameField extends React.PureComponent {
         ctx.fillRect(0,800, cnv.width, cnv.height)
     }
 
-    allowMove = (deltaX, deltaY, facing) => {
+    allowMove = (deltaX, deltaY) => {
         var cnv = document.querySelector('canvas');
         if(posX + deltaX > 0 && posX + ScaleW + deltaX < cnv.width) {
             posX += deltaX;
@@ -81,7 +81,6 @@ export default class GameField extends React.PureComponent {
         if(posY + deltaY > 0 && posY + ScaleH + deltaY < cnv.height) {
             posY += deltaY;
         }
-        currentFacing = facing;
     }
     hitBottom = () => {
         Gravity += GravitySpeed;
@@ -139,6 +138,7 @@ export default class GameField extends React.PureComponent {
 
         // Jump Sprite
         if(hasJumped) {
+            console.log('object')
             FramesJumpCount++;
             if(FramesJumpCount >= Frames) {
                 FramesJumpCount = 0;
