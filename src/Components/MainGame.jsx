@@ -17,8 +17,9 @@ const Main = Styled.div`
 
 let keysPressed = {} // Объект для клавиш движения
 
+
 let posX = 200; // Стартовая позиция
-let posY = 500;
+let posY = 700;
 let Speed = 2;
 
 const Scale = 2;
@@ -35,11 +36,13 @@ let FramesJumpCount = 0;
 const Loop_Move = [0,30,60,90,125,160]; // Цикл картинок спрайта на движение
 let loopMoveIndex = 0; // Индекс картинки движения
 
-const Loop_Jump = [0, 30, 60, 90, 120, 150]; // Цикл картинок спрайта для прыжка
+const Loop_Jump = [0, 25, 60, 125, 185]; // Цикл картинок спрайта для прыжка
 let loopJumpIndex = 0; // Индекс картинки прыжка
 
 const GravitySpeed = 0.06;
 let Gravity = 0;
+
+let jumpVelocity = 0.6;
 
 const FaceLeft = -1; // Поворот влево
 const FaceRight = 0; // Поворот вправо
@@ -51,7 +54,18 @@ let img_jump = new Image();
 img_move.src = move;
 img_jump.src = jump;
 
+console.log('omve',img_move)
+console.log('jump',img_jump)
+
 export default class GameField extends React.PureComponent {
+
+    constructor(props) {
+        super(props)
+        this.state = {
+            canvasHeight: 0,
+            whichState: img_move,
+        }
+    }
 
     Canvas = () => {
         var cnv = document.querySelector('canvas');
@@ -59,11 +73,11 @@ export default class GameField extends React.PureComponent {
         cnv.height = window.innerHeight;
     }
 
-    drawPlayer = (x,y, framesRight) => {
+    drawPlayer = (x,y, framesRight, whichState) => {
         this.x = x;
         this.y = y;
         var ctx = document.querySelector('canvas').getContext('2d');
-        ctx.drawImage(img_move, framesRight, 0, ScaleW, ScaleH, this.x, this.y, 50,50)
+        ctx.drawImage(whichState, framesRight, 0, ScaleW, ScaleH, this.x, this.y, 50,50)
     }
 
     drawLand = () => {
@@ -83,11 +97,13 @@ export default class GameField extends React.PureComponent {
         }
     }
     hitBottom = () => {
+        
         Gravity += GravitySpeed;
         posY = posY += Gravity;
-        var rockBottom = document.querySelector('canvas').height - 150;
-        if(posY > rockBottom) {
-            posY = rockBottom;
+        
+        if(posY > this.state.canvasHeight) {
+            posY = this.state.canvasHeight;
+            Gravity = 0;
         }
     }
 
@@ -106,20 +122,23 @@ export default class GameField extends React.PureComponent {
         this.hitBottom();
 
         if(keysPressed.w) {
-            this.allowMove(0, -Speed);
-            hasJumped = true;
+            this.setState({ whichState: img_jump })
+            this.allowMove(0, -2);
         } 
         /*else if(keysPressed.s) {
             this.allowMove(0, Speed);
         }*/
         if(keysPressed.a) {
-            this.allowMove(-Speed, 0, FaceLeft);
+            this.setState({ whichState: img_move })
+            this.allowMove(-Speed, 0);
             hasMoved = true;
         } else if(keysPressed.d) {
-            this.allowMove(Speed, 0, FaceRight);
+            this.setState({ whichState: img_move })
+            this.allowMove(Speed, 0);
             hasMoved = true;
         }
 
+        
         // Move Sprite
         if(hasMoved) {
             FramesMoveCount++;
@@ -136,24 +155,7 @@ export default class GameField extends React.PureComponent {
             loopMoveIndex = 0;
         }
 
-        // Jump Sprite
-        if(hasJumped) {
-            console.log('object')
-            FramesJumpCount++;
-            if(FramesJumpCount >= Frames) {
-                FramesJumpCount = 0;
-                loopJumpIndex++;
-                if(loopJumpIndex >= Loop_Move.length) {
-                    loopJumpIndex = 0;
-                }
-            }
-        }
-        // Cancel Sprite animation
-        if (!hasJumped) {
-            loopJumpIndex = 0;
-        }
-
-        this.drawPlayer(posX,posY, Loop_Move[loopMoveIndex]);
+        this.drawPlayer(posX,posY, Loop_Move[loopMoveIndex], this.state.whichState);
 
         window.requestAnimationFrame(this.gameLoop)
     }
@@ -161,9 +163,15 @@ export default class GameField extends React.PureComponent {
 
     componentDidMount() {
 
+        
+
         //Инициализация
         this.Canvas();
         this.drawLand();
+
+        var rockBottom = document.querySelector('canvas').height - 150;
+        this.setState({ canvasHeight: rockBottom })
+
         window.addEventListener('keydown', (e) => {
             keysPressed[e.key] = true;
         });
