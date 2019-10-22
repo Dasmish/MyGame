@@ -1,11 +1,17 @@
 import React from 'react';
 import Styled from 'styled-components';
 
+
 //Элементы игры
-// import drawPlayer from './Player';
-// import MainMenu from './MainMenu';
-import move from '../Spites/PinkMonster/Pink_Monster_Walk_6.png'
+import move from '../Spites/PinkMonster/PinkMonsterWalk.png'
 import jump from '../Spites/PinkMonster/Pink_Monster_Jump_8.png'
+
+import ground from '../Spites/Foreground/Tileset.png'
+
+import Sky from '../Spites/Background/CloudsBack.png'
+
+import Grass from '../Spites/Foreground/Grass.png'
+import Wall_Vertical from '../Spites/Foreground/Wall1.png'
 
 const Main = Styled.div`
     display: flex;
@@ -31,72 +37,112 @@ let ScaleH = Scale * BlockH; // Правый нижний угол картин�
 
 const Frames = 12;
 let FramesMoveCount = 0; //Движение
-let FramesJumpCount = 0;
 
 const Loop_Move = [0,30,60,90,125,160]; // Цикл картинок спрайта на движение
-let loopMoveIndex = 0; // Индекс картинки движения
 
-const Loop_Jump = [0, 25, 60, 125, 185]; // Цикл картинок спрайта для прыжка
-let loopJumpIndex = 0; // Индекс картинки прыжка
+let loopMoveIndex = 0; // Индекс картинки движения
 
 const GravitySpeed = 0.06;
 let Gravity = 0;
 
-let jumpVelocity = 0.6;
+let jumpVelocity = 3;
 
-const FaceLeft = -1; // Поворот влево
-const FaceRight = 0; // Поворот вправо
-let currentFacing = FaceRight; // По умолчанию картинка смотрит вправо
+const Obstacle = {
+    Large: {
+        width: 150,
+        height: 150,
+    },
+    Medium: {
+        width: 100,
+        height: 100,
+    },
+    Small: {
+        width: 50,
+        height: 50,
+        x: Math.floor(Math.random() * 500),
+        // x: 500,
+        // y: Math.floor(Math.random() * 600),
+        y: 750
+    }
+}
+
 
 let img_move = new Image();
 let img_jump = new Image();
 
+let foreground = new Image();
+let _Grass = new Image();
+let _WallVert = new Image();
+let _Sky = new Image();
+
 img_move.src = move;
 img_jump.src = jump;
 
-console.log('omve',img_move)
-console.log('jump',img_jump)
+foreground.src = ground;
+_Grass.src = Grass;
+_WallVert.src = Wall_Vertical;
+_Sky.src = Sky;
+
+let whichState = null;
 
 export default class GameField extends React.PureComponent {
 
     constructor(props) {
         super(props)
         this.state = {
-            canvasHeight: 0,
-            whichState: img_move,
+            canvasHeight: 500,
         }
     }
 
     Canvas = () => {
-        var cnv = document.querySelector('canvas');
+        const cnv = document.querySelector('canvas');
         cnv.width = window.innerWidth;
         cnv.height = window.innerHeight;
     }
 
-    drawPlayer = (x,y, framesRight, whichState) => {
+    drawPlayer = (x,y, frames, whichState, faceDirection) => {
         this.x = x;
         this.y = y;
-        var ctx = document.querySelector('canvas').getContext('2d');
-        ctx.drawImage(whichState, framesRight, 0, ScaleW, ScaleH, this.x, this.y, 50,50)
+        const ctx = document.querySelector('canvas').getContext('2d');
+        ctx.drawImage(whichState, frames, faceDirection, ScaleW, ScaleH, this.x, this.y, 50,50)
     }
 
     drawLand = () => {
-        var cnv = document.querySelector('canvas');
-        var ctx = document.querySelector('canvas').getContext('2d');
-        ctx.fillStyle = 'grey';
-        ctx.fillRect(0,800, cnv.width, cnv.height)
+        const cnv = document.querySelector('canvas');
+        const ctx = document.querySelector('canvas').getContext('2d');
+        ctx.drawImage(_Grass, 0,790, 70, 30)
+        ctx.drawImage(_WallVert, 0, 810, 70, 90)
+        let iter = 65;
+        for (let index = 0; index < 25; index++) {
+            ctx.drawImage(_Grass, 0 + iter,790, 70, 30);
+            ctx.drawImage(_WallVert, 0 + iter, 810, 70, 90)
+            iter += 65;
+        }
+        
     }
 
     allowMove = (deltaX, deltaY) => {
-        var cnv = document.querySelector('canvas');
+        const cnv = document.querySelector('canvas');
         if(posX + deltaX > 0 && posX + ScaleW + deltaX < cnv.width) {
+            // if(posX > Obstacle.Small.x - ScaleW) {
+            //     posX = Obstacle.Small.x - ScaleW;
+            // }
+            if (posX + ScaleW > Obstacle.Small.x) {
+                this.Collide()
+            }
             posX += deltaX;
         }
         if(posY + deltaY > 0 && posY + ScaleH + deltaY < cnv.height) {
+            if (posY + ScaleH  > Obstacle.Small.y ) {
+                console.log('2222')
+            }
             posY += deltaY;
         }
     }
-    hitBottom = () => {
+    Collide = () => {
+        console.log('object');
+    }
+    BottomCollide = () => {
         
         Gravity += GravitySpeed;
         posY = posY += Gravity;
@@ -108,34 +154,51 @@ export default class GameField extends React.PureComponent {
     }
 
     redrawCnv = () => {
-        var cnv = document.querySelector('canvas');
-        var ctx = document.querySelector('canvas').getContext('2d');
+        const cnv = document.querySelector('canvas');
+        const ctx = document.querySelector('canvas').getContext('2d');
         ctx.clearRect(0,0,cnv.width,cnv.height);
+        ctx.drawImage(_Sky, 0, 0, cnv.width, cnv.height)
+    }
+
+    Obstacles = () => {
+        const ctx = document.querySelector('canvas').getContext('2d');
+
+        let randX = Math.floor(Math.random() * 100); 
+        let randY = Math.floor(Math.random() * 200);
+
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(Obstacle.Small.x, Obstacle.Small.y, Obstacle.Small.width,Obstacle.Small.height)
+        
     }
 
     gameLoop = () => {
         let hasMoved = false;
-        let hasJumped = false;
+        let faceDirect = 0;
+
+        whichState = img_move;
 
         this.redrawCnv();
         this.drawLand();
-        this.hitBottom();
+        this.BottomCollide();
+        this.Obstacles();
+
 
         if(keysPressed.w) {
-            this.setState({ whichState: img_jump })
-            this.allowMove(0, -2);
+            this.allowMove(0, -jumpVelocity);
+            whichState = img_jump;
+            hasMoved = true;
         } 
         /*else if(keysPressed.s) {
             this.allowMove(0, Speed);
         }*/
         if(keysPressed.a) {
-            this.setState({ whichState: img_move })
             this.allowMove(-Speed, 0);
             hasMoved = true;
+            faceDirect = 32;
         } else if(keysPressed.d) {
-            this.setState({ whichState: img_move })
             this.allowMove(Speed, 0);
             hasMoved = true;
+            faceDirect = 0;
         }
 
         
@@ -155,22 +218,21 @@ export default class GameField extends React.PureComponent {
             loopMoveIndex = 0;
         }
 
-        this.drawPlayer(posX,posY, Loop_Move[loopMoveIndex], this.state.whichState);
+        this.drawPlayer(posX,posY, Loop_Move[loopMoveIndex], whichState, faceDirect);
 
         window.requestAnimationFrame(this.gameLoop)
     }
 
-
     componentDidMount() {
-
-        
-
         //Инициализация
         this.Canvas();
-        this.drawLand();
+        
+        
 
         var rockBottom = document.querySelector('canvas').height - 150;
+        console.log(document.querySelector('canvas').height)
         this.setState({ canvasHeight: rockBottom })
+        
 
         window.addEventListener('keydown', (e) => {
             keysPressed[e.key] = true;
@@ -179,12 +241,6 @@ export default class GameField extends React.PureComponent {
             keysPressed[e.key] = false;
         });
         this.gameLoop();
-
-        /*window.addEventListener('keydown', (e) => {
-            this.redraw(e)           
-        })*/
-        //Движения игрока
-        // window.addEventListener('keydown', this.playerMovement)
     }    
     
 
