@@ -1,19 +1,18 @@
 import React from 'react';
 import Styled from 'styled-components';
 
-
 //Элементы игры
 import idle from '../Spites/PinkMonster/Pink_Monster_Idle_4.png';
-import move from '../Spites/PinkMonster/PinkMonsterWalk.png'
-import jump from '../Spites/PinkMonster/Pink_Monster_Jump_8.png'
-import attack from '../Spites/PinkMonster/Pink_Monster_Attack1_4.png'
+import move from '../Spites/PinkMonster/PinkMonsterWalk.png';
+import jump from '../Spites/PinkMonster/Pink_Monster_Jump_8.png';
+import attack from '../Spites/PinkMonster/Pink_Monster_Attack1_4.png';
 
-import ground from '../Spites/Foreground/Tileset.png'
+import ground from '../Spites/Foreground/Tileset.png';
 
-import Sky from '../Spites/Background/CloudsBack.png'
+import Sky from '../Spites/Background/CloudsBack.png';
 
-import Grass from '../Spites/Foreground/Grass.png'
-import Wall_Vertical from '../Spites/Foreground/Wall1.png'
+import Grass from '../Spites/Foreground/Grass.png';
+import Wall_Vertical from '../Spites/Foreground/Wall1.png';
 
 const Main = Styled.div`
     display: flex;
@@ -24,7 +23,6 @@ const Main = Styled.div`
 `
 
 let keysPressed = {} // Объект для клавиш движения
-
 
 let posX = 200; // Стартовая позиция
 let posY = 700;
@@ -45,7 +43,21 @@ let faceDirect = 0;
 
 const Frames = 12;
 const AttackFrames = 9;
-const IdleFrames = 6;
+const IdleFrames = 100;
+
+//Перемещение
+let currentMoveFrame = 0;
+var SrcX, SrcY;
+let MovementSpritesheetWidth = 192, MovementSpritesheetHeight = 64;
+let MoveCols = 6, Row = 2;
+let FrameWidth = MovementSpritesheetWidth / MoveCols, FrameHeight = MovementSpritesheetHeight / Row;
+
+//Айдл
+let currentIdleFrame = 0
+var SrcIdleX, SrcIdleY;
+let IdleSpritesheetWidth = 164, IdleSpritesheetHeight = 64;
+let IdleCols = 5;
+let IdleFrameWidth = IdleSpritesheetWidth / IdleCols, IdleFrameHeight = IdleSpritesheetHeight / Row;
 
 let FramesMoveCount = 0; //Движение
 const Loop_Move = [0,30,60,90,125,160]; // Цикл картинок спрайта на движение
@@ -63,6 +75,7 @@ const GravitySpeed = 0.06;
 let Gravity = 0;
 
 let jumpVelocity = 3;
+
 
 const Obstacle = {
     Large: {
@@ -120,13 +133,13 @@ export default class GameField extends React.PureComponent {
             animate: null,
             idle: true,
             interact: null,
-            action: null,
+            action: img_idle,
         }
     }
 
     drawPlayer = (x,y, frames, whichState, faceDirection) => {
         const ctx = document.querySelector('canvas').getContext('2d');
-        ctx.drawImage(whichState, frames, faceDirection, ScaleW, ScaleH, x, y, 50,50)
+        ctx.drawImage(whichState, frames, faceDirection, FrameWidth, FrameHeight, x, y, 50,50)
     }
 
     drawLand = () => {
@@ -149,32 +162,28 @@ export default class GameField extends React.PureComponent {
     }
 
     PlayerInteract = () => {
+        this.setState({animate: this.NewAnimate()})
 
-        whichState = img_idle
-
-        if(keysPressed.ArrowUp) {
-            this.allowMove(0, -jumpVelocity);
-            this.setState({move: true, action: img_jump, interact: Loop_Move[loopMoveIndex] ,animate: this.Animate()})
-        }
-        if (keysPressed.z) {
-            // whichState = img_attack;
-            this.setState({attack: true, action: img_attack, interact: Attack_Loop[AttackLoopIndex] , animate: this.Animate()})
-        }
+        // if(keysPressed.ArrowUp) {
+        //     this.allowMove(0, -jumpVelocity);
+        //     this.setState({move: true, action: img_jump, interact: Loop_Move[loopMoveIndex]})
+        // }
+        // if (keysPressed.z) {
+        //     this.setState({attack: true, action: img_attack, interact: Attack_Loop[AttackLoopIndex]})
+        // }
         if(keysPressed.ArrowLeft) {
-            // whichState = img_move;
             InitialSpeed = Speed;
-            this.allowMove(-InitialSpeed, 0);
             faceDirect = 32;
-            this.setState({move: true, action: img_move, interact: Loop_Move[loopMoveIndex], animate: this.Animate()})
+            this.allowMove(-InitialSpeed, 0);
+            this.setState({move: true, action: img_move})
             
         } else if(keysPressed.ArrowRight) {
-            // whichState = img_move;
             InitialSpeed = Speed;
             faceDirect = 0;
             this.allowMove(InitialSpeed, 0);
-            this.setState({move: true, action: img_move, interact: Loop_Move[loopMoveIndex] ,animate: this.Animate()})
+            this.setState({move: true, action: img_move})
         }
-        this.drawPlayer(posX,posY, this.state.interact, whichState, faceDirect);
+        
     }
 
     allowMove = (deltaX, deltaY) => {
@@ -196,15 +205,38 @@ export default class GameField extends React.PureComponent {
         }
     }
 
+    NewAnimate = () => {
+        if (this.state.move) {
+            currentMoveFrame = ++currentMoveFrame % MoveCols;
+            SrcX = currentMoveFrame * FrameWidth;
+            SrcY = 0;
+        }
+        if (!this.state.move) {
+            console.log('object')
+            currentIdleFrame = ++currentIdleFrame & IdleCols;
+            SrcIdleX = currentIdleFrame * IdleFrameWidth;
+            SrcIdleY = 0;
+        }
+    }
+
     Animate = () => {
         // Движение по массиву спрайтов для анимации
-        if(this.state.move) {
+        if (this.state.move) {
             FramesMoveCount++;
             if(FramesMoveCount >= Frames) {
                 FramesMoveCount = 0;
                 loopMoveIndex++;
                 if(loopMoveIndex >= Loop_Move.length) {
                     loopMoveIndex = 0;
+                }
+            }
+        } else {
+            IdleFramesCount++;
+            if(IdleFramesCount >= IdleFrames) {
+                IdleFramesCount = 0;
+                IdleLoopIndex++;
+                if(IdleLoopIndex >= Idle_Loop.length) {
+                    IdleLoopIndex = 0;
                 }
             }
         }
@@ -218,10 +250,6 @@ export default class GameField extends React.PureComponent {
                 }
             }
         }
-    }
-
-    AnimateAttack = () => {
-        
     }
 
     ParralaxBg = () => {
@@ -278,16 +306,14 @@ export default class GameField extends React.PureComponent {
 
         this.PlayerInteract();
 
+        this.drawPlayer(posX,posY, SrcX, this.state.action, faceDirect);
         window.requestAnimationFrame(this.gameLoop)
     }
 
     componentDidMount() {
+
         var rockBottom = document.querySelector('canvas').height - 150;
-        this.setState({ canvasHeight: rockBottom })
-
-        
-        this.setState({action: img_idle})
-
+        this.setState({ canvasHeight: rockBottom, action: img_idle })
 
         window.addEventListener('keydown', (e) => {
             keysPressed[e.key] = true;
@@ -297,9 +323,7 @@ export default class GameField extends React.PureComponent {
             keysPressed[e.key] = false;
 
             InitialSpeed = 0;
-            this.setState({move: false})
-            this.setState({animate: null})
-            this.setState({attack: false})
+            this.setState({move: false, animate: this.NewAnimate(), attack: false, action: img_idle})
             loopMoveIndex = 0;
         });
         this.gameLoop();
