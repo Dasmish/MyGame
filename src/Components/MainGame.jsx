@@ -212,7 +212,7 @@ export default class GameField extends React.PureComponent {
             SrcY = 0;
         }
         if (!this.state.move) {
-            currentIdleFrame = ++currentIdleFrame & IdleCols;
+            currentIdleFrame = ++currentIdleFrame % IdleCols;
             SrcIdleX = currentIdleFrame * IdleFrameWidth;
             SrcIdleY = 0;
         }
@@ -322,7 +322,7 @@ export default class GameField extends React.PureComponent {
     componentDidMount() {
 
         var rockBottom = document.querySelector('canvas').height - 150;
-        this.setState({ canvasHeight: rockBottom, action: img_move, frames: SrcX })
+        this.setState({ canvasHeight: rockBottom, action: img_idle, frames: SrcIdleX, animate: this.NewAnimate() })
 
         window.addEventListener('keydown', (e) => {
             keysPressed[e.key] = true;
@@ -333,7 +333,7 @@ export default class GameField extends React.PureComponent {
             keysPressed[e.key] = false;
 
             InitialSpeed = 0;
-            this.setState({move: false, animate: this.NewAnimate(), attack: false, action: img_move, frames: SrcX})
+            this.setState({move: false, animate: this.NewAnimate(), attack: false, action: img_idle, frames: SrcIdleX})
         });
         this.gameLoop();
     }    
