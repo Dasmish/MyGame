@@ -39,25 +39,25 @@ let ScaleW = Scale * BlockW; // Левый нижний угол картинк�
 let ScaleH = Scale * BlockH; // Правый нижний угол картинки
 
 
-let faceDirect = 0;
-
 const Frames = 12;
 const AttackFrames = 9;
 const IdleFrames = 100;
 
+const Seconds = 3;
+
 //Перемещение
 let currentMoveFrame = 0;
 var SrcX, SrcY;
-let MovementSpritesheetWidth = 192, MovementSpritesheetHeight = 64;
-let MoveCols = 6, Row = 2;
-let FrameWidth = MovementSpritesheetWidth / MoveCols, FrameHeight = MovementSpritesheetHeight / Row;
+const MovementSpritesheetWidth = 192, MovementSpritesheetHeight = 64;
+const MoveCols = 6, Row = 2;
+const FrameWidth = MovementSpritesheetWidth / MoveCols, FrameHeight = MovementSpritesheetHeight / Row;
 
 //Айдл
 let currentIdleFrame = 0
 var SrcIdleX, SrcIdleY;
-let IdleSpritesheetWidth = 164, IdleSpritesheetHeight = 64;
-let IdleCols = 5;
-let IdleFrameWidth = IdleSpritesheetWidth / IdleCols, IdleFrameHeight = IdleSpritesheetHeight / Row;
+const IdleSpritesheetWidth = 164, IdleSpritesheetHeight = 64;
+const IdleCols = 5;
+const IdleFrameWidth = IdleSpritesheetWidth / IdleCols, IdleFrameHeight = IdleSpritesheetHeight / Row;
 
 let FramesMoveCount = 0; //Движение
 const Loop_Move = [0,30,60,90,125,160]; // Цикл картинок спрайта на движение
@@ -133,13 +133,15 @@ export default class GameField extends React.PureComponent {
             animate: null,
             idle: true,
             interact: null,
+            facedir: 0,
             action: img_idle,
+            frames: null,
         }
     }
 
     drawPlayer = (x,y, frames, whichState, faceDirection) => {
         const ctx = document.querySelector('canvas').getContext('2d');
-        ctx.drawImage(whichState, frames, faceDirection, FrameWidth, FrameHeight, x, y, 50,50)
+        ctx.drawImage(whichState, frames, faceDirection, FrameWidth, FrameHeight, x, y, 50,50);
     }
 
     drawLand = () => {
@@ -173,15 +175,13 @@ export default class GameField extends React.PureComponent {
         // }
         if(keysPressed.ArrowLeft) {
             InitialSpeed = Speed;
-            faceDirect = 32;
             this.allowMove(-InitialSpeed, 0);
-            this.setState({move: true, action: img_move})
+            this.setState({move: true, action: img_move, frames: SrcX, facedir: FrameHeight})
             
         } else if(keysPressed.ArrowRight) {
             InitialSpeed = Speed;
-            faceDirect = 0;
             this.allowMove(InitialSpeed, 0);
-            this.setState({move: true, action: img_move})
+            this.setState({move: true, action: img_move, frames: SrcX, facedir: 0})
         }
         
     }
@@ -212,7 +212,6 @@ export default class GameField extends React.PureComponent {
             SrcY = 0;
         }
         if (!this.state.move) {
-            console.log('object')
             currentIdleFrame = ++currentIdleFrame & IdleCols;
             SrcIdleX = currentIdleFrame * IdleFrameWidth;
             SrcIdleY = 0;
@@ -263,13 +262,22 @@ export default class GameField extends React.PureComponent {
             return;
         } 
         else if (InitialSpeed > 0) {
-            if (faceDirect === 0) {
+            if (this.state.facedir === 0) {
                 ctx.translate(-Speed, 0)
-            } else if (faceDirect === 32) {
+            } else if (this.state.facedir === 32) {
                 ctx.translate(Speed, 0)
             }
         }
-        
+    }
+
+    CameraController = () => {
+        const cnv = document.querySelector('canvas');
+        const ctx = document.querySelector('canvas').getContext('2d');
+
+        console.log(ctx)
+        ctx.save();
+        ctx.translate(1, 0);
+        ctx.restore();
     }
 
     BottomCollide = () => {
@@ -290,13 +298,15 @@ export default class GameField extends React.PureComponent {
 
     Obstacles = () => {
         const ctx = document.querySelector('canvas').getContext('2d');
-
         ctx.fillStyle = 'blue';
         ctx.fillRect(Obstacle.Small.x, Obstacle.Small.y, Obstacle.Small.width,Obstacle.Small.height)
     }
 
     gameLoop = () => {
+        window.requestAnimationFrame(this.gameLoop);
+
         this.ParralaxBg();
+        this.CameraController();
         
         this.drawLand();
         this.Obstacles();
@@ -306,25 +316,24 @@ export default class GameField extends React.PureComponent {
 
         this.PlayerInteract();
 
-        this.drawPlayer(posX,posY, SrcX, this.state.action, faceDirect);
-        window.requestAnimationFrame(this.gameLoop)
+        this.drawPlayer(posX,posY, this.state.frames, this.state.action, this.state.facedir);
     }
 
     componentDidMount() {
 
         var rockBottom = document.querySelector('canvas').height - 150;
-        this.setState({ canvasHeight: rockBottom, action: img_idle })
+        this.setState({ canvasHeight: rockBottom, action: img_move, frames: SrcX })
 
         window.addEventListener('keydown', (e) => {
             keysPressed[e.key] = true;
+
             this.setState({move: true})
         });
         window.addEventListener('keyup', (e) => {
             keysPressed[e.key] = false;
 
             InitialSpeed = 0;
-            this.setState({move: false, animate: this.NewAnimate(), attack: false, action: img_idle})
-            loopMoveIndex = 0;
+            this.setState({move: false, animate: this.NewAnimate(), attack: false, action: img_move, frames: SrcX})
         });
         this.gameLoop();
     }    
